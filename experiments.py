@@ -6,6 +6,8 @@ import math
 import sys
 from typing import List, Tuple, Optional
 import csv
+from pathlib import Path
+import sys, argparse
 
 import networkx as nx
 import numpy as np
@@ -22,7 +24,7 @@ from spanner import (
 )
 
 
-def run_single(G: nx.Graph, t_values: List[float], all_pairs: bool, name: str) -> List[dict]:
+def run_single(G: nx.Graph, t_values: List[float], name: str) -> List[dict]:
     """
     For a fixed input graph G, run greedy spanner for each t in t_values and collect metrics.
     Returns list of dict rows.
@@ -36,7 +38,7 @@ def run_single(G: nx.Graph, t_values: List[float], all_pairs: bool, name: str) -
         H = greedy_spanner(G, t=t)
         size = H.number_of_edges()
         wH = graph_weight(H)
-        stretch = compute_stretch(G, H, all_pairs=all_pairs)
+        stretch = compute_stretch(G, H)
 
         rows.append({
             "graph": name,
@@ -52,14 +54,14 @@ def run_single(G: nx.Graph, t_values: List[float], all_pairs: bool, name: str) -
     return rows
 
 
-def scenario_complete_random(n: int, t_values: List[float], all_pairs: bool):
+def scenario_complete_random(n: int, t_values: List[float]):
     G = random_complete_weighted_graph(n)
-    return run_single(G, t_values, all_pairs, name=f"complete_random(n={n})")
+    return run_single(G, t_values, name=f"complete_random(n={n})")
 
 
-def scenario_er(n: int, p: float, t_values: List[float], all_pairs: bool):
+def scenario_er(n: int, p: float, t_values: List[float]):
     G = er_random_graph(n, p)
-    return run_single(G, t_values, all_pairs, name=f"er(n={n},p={p})")
+    return run_single(G, t_values, name=f"er(n={n},p={p})")
 
 
 
@@ -130,9 +132,9 @@ def main():
     args = parser.parse_args()
 
     if args.scenario == "complete":
-        rows = scenario_complete_random(args.n, args.t, args.all_pairs)
+        rows = scenario_complete_random(args.n, args.t)
     elif args.scenario == "er":
-        rows = scenario_er(args.n, args.p, args.t, args.all_pairs)
+        rows = scenario_er(args.n, args.p, args.t)
     else:
         print("Unknown scenario", file=sys.stderr)
         sys.exit(2)
@@ -152,6 +154,21 @@ def main():
     maybe_plot(rows, args.plot)
 """
 
+PROJECT_DIR = Path(__file__).resolve().parent  # "תיקיית הפרויקט" = תיקיית הסקריפט
+
+def _to_project_path(name: str, default_ext: str) -> str:
+    """
+    קבל מחרוזת מהפרמטר (יכולה לכלול בטעות נתיב), החזר נתיב מלא בתיקיית הפרויקט.
+    אם אין סיומת — הוסף סיומת ברירת־מחדל.
+    אם name ריק — החזר מחרוזת ריקה.
+    """
+    if not name:
+        return ""
+    fname = Path(name).name  # מתעלם מכל נתיב שהוזן
+    if not Path(fname).suffix:
+        fname = f"{fname}{default_ext}"
+    return str(PROJECT_DIR / fname)
+
 def main():
     parser = argparse.ArgumentParser(description="Greedy t-spanner experiments")
     sub = parser.add_subparsers(dest="scenario")
@@ -161,8 +178,11 @@ def main():
     common.add_argument("--t", type=float, nargs="+", default=[1.5, 2.0, 3.0])
     common.add_argument("--all-pairs", action="store_true",
                         help="Use all-pairs distances (slower but exact); default: sample pairs")
-    common.add_argument("--csv", type=str, default="", help="Save results CSV to path")
-    common.add_argument("--plot", type=str, default="", help="Save plots to PNG (or show if empty)")
+    # שים לב: עכשיו מזינים רק *שם קובץ* (אופציונלית בלי סיומת); הקבצים יישמרו בתיקיית הפרויקט
+    common.add_argument("--csv", type=str, default="",
+                        help="CSV filename to save in project folder (e.g., results or results.csv)")
+    common.add_argument("--plot", type=str, default="",
+                        help="PNG filename to save in project folder (e.g., plot or plot.png)")
 
     # complete
     p_complete = sub.add_parser("complete", parents=[common],
@@ -183,27 +203,33 @@ def main():
 
     # הרצה
     if args.scenario == "complete":
-        rows = scenario_complete_random(args.n, args.t, args.all_pairs)
+        rows = scenario_complete_random(args.n, args.t)
     elif args.scenario == "er":
-        rows = scenario_er(args.n, args.p, args.t, args.all_pairs)
+        rows = scenario_er(args.n, args.p, args.t)
     else:
         print("Unknown scenario", file=sys.stderr)
         sys.exit(2)
 
-    # chart
+    # הדפסה למסך
     if rows:
         header = list(rows[0].keys())
         print("\t".join(header))
         for r in rows:
             print("\t".join(str(r[h]) for h in header))
 
-    # CSV
-    if getattr(args, "csv", ""):
-        save_csv(rows, args.csv)
+    # הכנת נתיבי קבצים בתיקיית הפרויקט (הוספת סיומות אם חסרות)
+    csv_path = _to_project_path(getattr(args, "csv", ""), ".csv")
+    plot_path = _to_project_path(getattr(args, "plot", ""), ".png")
 
-    # graphical output
-    maybe_plot(rows, args.plot)
+    # שמירת CSV (אם ביקשת)
+    if csv_path:
+        save_csv(rows, csv_path)
+        print(f"[info] CSV saved to: {csv_path}")
 
+    # פלט גרפי (אם ביקשת שם קובץ — נשמור; אם לא, נציג)
+    maybe_plot(rows, plot_path)
+    if plot_path:
+        print(f"[info] Plot saved to: {plot_path}")
 
 
 

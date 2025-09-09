@@ -1,8 +1,7 @@
 # spanner.py
 # Greedy t-spanner & utilities
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Iterable, Tuple, Optional, List, Dict
+from typing import Optional, Dict
 import math
 import random
 import networkx as nx
@@ -61,53 +60,37 @@ def graph_weight(G: nx.Graph) -> float:
     total_weight = sum(weights)
     return total_weight
 
-#@TODO: remove sample_pairs option?
+
 def compute_stretch(G: nx.Graph, H: nx.Graph,
-                    all_pairs: bool = True,
                     sample_pairs: int = 500,
                     rng: Optional[random.Random] = None) -> float:
     """
     Compute the maximum observed stretch max_{u,v} dist_H(u,v)/dist_G(u,v).
     Assumes G is connected and H spans the same vertex set.
-
-    - If all_pairs=True: uses all-pairs Dijkstra (O(n*(m+n log n))).
-    - Else: samples up to sample_pairs random ordered pairs.
-
+    uses all-pairs Dijkstra (O(n*(m+n log n))).
     Returns: max stretch observed (>=1.0)
     """
     if rng is None:
         rng = random.Random(0)
 
     nodes = list(G.nodes())
-    if all_pairs:
-        # Precompute all-pairs shortest path lengths
-        distG: Dict = dict(nx.all_pairs_dijkstra_path_length(G, weight="weight"))
-        distH: Dict = dict(nx.all_pairs_dijkstra_path_length(H, weight="weight"))
-        max_ratio = 1.0
-        for u in nodes:
-            for v in nodes:
-                if u == v:
-                    continue
-                duv = distG[u].get(v, math.inf)
-                huv = distH[u].get(v, math.inf)
-                if duv == 0 or duv == math.inf:
-                    continue
-                ratio = huv / duv
-                if ratio > max_ratio:
-                    max_ratio = ratio
-        return max_ratio
-    else:
-        # Sample pairs
-        max_ratio = 1.0
-        for _ in range(sample_pairs):
-            u, v = rng.sample(nodes, 2)
-            duv = nx.shortest_path_length(G, u, v, weight="weight")
-            huv = nx.shortest_path_length(H, u, v, weight="weight")
-            # duv > 0 by connectivity and u!=v
+    # Precompute all-pairs shortest path lengths
+    distG: Dict = dict(nx.all_pairs_dijkstra_path_length(G, weight="weight"))
+    distH: Dict = dict(nx.all_pairs_dijkstra_path_length(H, weight="weight"))
+    max_ratio = 1.0
+    for u in nodes:
+        for v in nodes:
+            if u == v:
+                continue
+            duv = distG[u].get(v, math.inf)
+            huv = distH[u].get(v, math.inf)
+            if duv == 0 or duv == math.inf:
+                continue
             ratio = huv / duv
             if ratio > max_ratio:
                 max_ratio = ratio
-        return max_ratio
+    return max_ratio
+    
 
 
 # =======================
@@ -150,7 +133,29 @@ def er_random_graph(n: int, p: float,
 
     return G
 
+def high_girth_random_graph(n: int, t: float,
+                    w_low: float = 0.0,
+                    w_high: float = 1.0) -> nx.Graph:
+    """
+    high girth graph. If disconnected, lightly augment to connect.
+    Random uniform weights on edges.
+    """
+    # create random graph
+    p = (n ** (1 / t)) / n
+    G = nx.gnp_random_graph(n, p, directed=False)
 
+    # if not connected, add edges to connect components
+    if not nx.is_connected(G):
+        comps = [list(c) for c in nx.connected_components(G)]
+        for a, b in zip(comps, comps[1:]):
+            u = a[0]; v = b[0]
+            G.add_edge(u, v)
+
+    # add random weights to edges
+    for u, v in G.edges():
+        G[u][v]["weight"] = random.uniform(w_low, w_high)
+
+    return G
 
 
 # =======================

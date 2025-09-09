@@ -1,0 +1,13 @@
+{
+  "graph_type": "er",                 // "complete" or "er" or "high_girth"
+  "n": 1000000,                       // number of vertices
+  "p": 0.25,                          // only for "er": edge probability
+  "weight_range": [1, 10],            // range of edge weights (inclusive
+  "t": 1.3,                           // strech factor t to test
+  "runs_per_setting": 3,              // how many runs per setting
+  "output": {
+    "csv_path": "C:\\Users\\Tomer\\Documents\\out.csv",
+    "excel_path": "C:\\Users\\Tomer\\Documents\\out.xlsx",
+    "open_after": true                // open the excel file after writing
+  }
+}
