@@ -14,19 +14,19 @@ from spanner import (
     random_complete_weighted_graph,
     er_random_graph,
     high_girth_random_graph,
-)
+    high_girth_random_graph_bfs_simple,
+    )
 
 # =======================
 # Global experiment config
 # =======================
 CONFIG = {
-    "graph_type": "complete",            # "complete" | "er" | "high_girth"
+    "graph_type": "high_girth",            # "complete" | "er" | "high_girth"
     "n": 100,                  # number of vertices
     "p": 0.25,                     # used only when graph_type == "er"
     "weight_range": (0.1, 10.0),   # (w_low, w_high)
     "t": [2.5, 5.0, 10.0],          # stretch factors to test
-    "runs_per_setting": 3,         # number of runs per t
-    "compute_stretch": True,      # whether to compute stretch (expensive!)
+    "runs_per_t": 3,         # number of graph experiments for each stretch factor t
 }
 
 
@@ -43,7 +43,7 @@ def build_graph(graph_type: str, n: int, t: float, p: float,
     elif graph_type == "er":
         return er_random_graph(n, p=p, w_low=w_low, w_high=w_high)
     elif graph_type == "high_girth":
-        return high_girth_random_graph(n, t=t, w_low=w_low, w_high=w_high)
+        return high_girth_random_graph_bfs_simple(n, t=t, w_low=w_low, w_high=w_high)
     else:
         raise ValueError(f"Unknown graph_type: {graph_type}")
 
@@ -73,17 +73,17 @@ def run_experiments():
     p = cfg["p"]
     w_low, w_high = cfg["weight_range"]
     t_values: List[float] = cfg["t"]
-    runs_per_setting: int = cfg["runs_per_setting"]
+    runs_per_t: int = cfg["runs_per_t"]
 
     print("# Greedy t-spanner experiment")
     print(f"# graph_type={graph_type}, n={n}, p={p if graph_type=='er' else 'N/A'}, "
-          f"weight_range=({w_low},{w_high}), runs_per_setting={runs_per_setting}")
+          f"weight_range=({w_low},{w_high}), runs_per_t={runs_per_t}")
     print("# Columns: t, run_idx, |E(G)|, |E(H)|, w(G), w(H), w(MST), max_stretch, "
           "edge_bound_pass, weight_bound_pass, edge_bound_value, weight_bound_value, "
           "build_seconds, spanner_seconds")
 
     for t in t_values:
-        for run_idx in range(runs_per_setting):
+        for run_idx in range(runs_per_t):
             # Build graph
             t0 = time.time()
             G = build_graph(graph_type, n, t, p, w_low, w_high)

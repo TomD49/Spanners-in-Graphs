@@ -12,18 +12,18 @@ import numpy as np
 # Core: Greedy t-Spanner
 # =======================
 
-def greedy_spanner(G: nx.Graph, t: float) -> nx.Graph:
+def greedy_spanner(G: nx.Graph, r: float) -> nx.Graph:
     """
-    Build a greedy t-spanner from a weighted, connected graph G.
+    Build a greedy r-spanner from a weighted, connected graph G.
     For each edge (u,v) in nondecreasing weight order, add it iff
-    the current spanner has dist(u,v) > t * w(u,v) (or no path).
+    the current spanner has dist(u,v) > r * w(u,v) (or no path).
 
     :param G: undirected weighted graph (edge attr 'weight' must exist)
-    :param t: stretch factor target (t >= 1.0)
-    :return: H, a t-spanner subgraph of G
+    :param t: stretch factor target (r >= 1.0)
+    :return: H, a r-spanner subgraph of G
     """
-    if t < 1.0:
-        raise ValueError("t must be >= 1.0")
+    if r < 1.0:
+        raise ValueError("r must be >= 1.0")
     H : nx.Graph = nx.Graph()
     H.add_nodes_from(G.nodes())
 
@@ -37,7 +37,7 @@ def greedy_spanner(G: nx.Graph, t: float) -> nx.Graph:
         else:
             # Shortest path in current H
             d = nx.shortest_path_length(H, u, v, weight="weight")
-            if d > t * w:
+            if d > r * w:
                 H.add_edge(u, v, weight=w)
     return H
 
@@ -148,7 +148,8 @@ def high_girth_random_graph(n: int, t: float,
     if not nx.is_connected(G):
         comps = [list(c) for c in nx.connected_components(G)]
         for a, b in zip(comps, comps[1:]):
-            u = a[0]; v = b[0]
+            u = a[0]
+            v = b[0]
             G.add_edge(u, v)
 
     # add random weights to edges
@@ -157,6 +158,65 @@ def high_girth_random_graph(n: int, t: float,
 
     return G
 
+
+
+
+def high_girth_random_graph_bfs_simple(n: int,
+                                       t: float,
+                                       w_low: float = 0.0,
+                                       w_high: float = 1.0) -> nx.Graph:
+    """
+    Generates an undirected random graph with edge probability p = (n**(1/t))/n,
+    assigns edge weights uniformly in the range [w_low, w_high],
+    and builds a final subgraph with no cycles shorter than t
+    by adding edges only if they do not close a short cycle.
+    The check uses BFS via `shortest_path_length` with a cutoff.
+
+    Idea: if in the current subgraph the distance d(u,v) < t-1,
+        then adding the edge (u,v) would create a cycle of length d(u,v) + 1 < t ⇒ skip it.
+        Otherwise, add the edge and assign a random weight.
+    """
+
+    # Calculate edge probability p to achieve desired girth
+    p = (n ** (1.0 / t)) / n
+    p = min(max(p, 0.0), 1.0)
+
+    # Create the initial random graph G0 to sample edges from 
+    G0 = nx.gnp_random_graph(n, p, directed=False)
+
+    # construct H- add edges from G0 only if they do not close a cycle shorter than t
+    H : nx.Graph = nx.Graph()
+    H.add_nodes_from(range(n))
+
+    #shuffle edges to get a random order
+    edges = list(G0.edges())
+    random.shuffle(edges)
+
+    # If there is a path of length <= floor(t-1), adding (u,v) would form a cycle of length < t
+    cutoff = math.floor(t - 1)
+
+    for u, v in edges:
+        if H.has_edge(u, v):
+            continue  # already have this edge
+        can_add = True
+        # Check if there's a path of length <= cutoff between u and v in H
+        dists = nx.single_source_shortest_path_length(H, source=u, cutoff=cutoff)
+        if v in dists:        # v reachable within <= cutoff ⇒ would create short cycle
+            can_add = False
+
+        if can_add:
+            H.add_edge(u, v, weight=random.uniform(w_low, w_high))
+
+    # If H is not connected, add edges to connect components
+    # This never creates a cycle because there is no existing path between the components.
+    if not nx.is_connected(H):
+        comps = [list(c) for c in nx.connected_components(H)]
+        for a, b in zip(comps, comps[1:]):
+            u = a[0]
+            v = b[0]
+            H.add_edge(u, v, weight=random.uniform(w_low, w_high))
+    
+    return H
 
 # =======================
 # Random points utility
