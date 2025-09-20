@@ -35,17 +35,17 @@ Each experiment prints a single CSV-style line with the following metrics:
 
 * **$w(\mathrm{MST}(G))$** – Weight of the minimum spanning tree of $G$, which acts as a natural lower bound for any connected subgraph.
 
-* **`max_stretch`** – Maximum observed stretch max_{u,v} [ dist_H(u,v) / dist_G(u,v) ]
+* **`max_stretch`** – Maximum observed stretch max₍u,v₎ [ dist_H(u,v) \ dist_G(u,v) ]
 
 indicating how well the spanner preserves pairwise distances relative to the target $r$.
 
-* **`edge_bound_pass`** – Boolean (`True`/`False`) indicating whether the size bound |E(H)| < n · ⌈ n^(1/t) ⌉ is satisfied.
+* **`edge_bound_pass`** – Boolean (`True`/`False`) indicating whether the size bound |E(H)| < n·⌈ n^(1/t) ⌉ is satisfied.
 
-* **`weight_bound_pass`** – Boolean indicating whether the weight bound w(H) < w(MST(G)) · (1 + n / (2t)) is satisfied.
+* **`weight_bound_pass`** – Boolean indicating whether the weight bound w(H) < w(MST(G))·(1 + n/(2t)) is satisfied.
 
-* **`edge_bound_value`** – The computed upper limit n · ⌈ n^(1/t) ⌉. used in the size-bound check.
+* **`edge_bound_value`** – The computed upper limit n·⌈ n^(1/t) ⌉. used in the size-bound check.
 
-* **`weight_bound_value`** – The computed upper limit w(MST(G)) · (1 + n / (2t)). used in the weight-bound check.
+* **`weight_bound_value`** – The computed upper limit w(MST(G))·(1 + n/(2t)). used in the weight-bound check.
 
 * **`build_seconds`** – Time (in seconds) required to generate the random input graph $G$.
 
