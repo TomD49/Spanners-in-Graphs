@@ -110,11 +110,11 @@ def random_complete_weighted_graph(n: int,
     return G
 
 
-def er_random_graph(n: int, p: float,
+def random_graph(n: int, p: float,
                     w_low: float = 0.0,
                     w_high: float = 1.0) -> nx.Graph:
     """
-    Erdos–Rényi G(n,p) (undirected, simple). If disconnected, lightly augment to connect.
+    random G(n,p) (undirected, simple). If disconnected, lightly augment to connect.
     Random uniform weights on edges.
     """
     # create random graph
@@ -133,35 +133,8 @@ def er_random_graph(n: int, p: float,
 
     return G
 
-def high_girth_random_graph(n: int, t: float,
-                    w_low: float = 0.0,
-                    w_high: float = 1.0) -> nx.Graph:
-    """
-    high girth graph. If disconnected, lightly augment to connect.
-    Random uniform weights on edges.
-    """
-    # create random graph
-    p = (n ** (1 / t)) / n
-    G = nx.gnp_random_graph(n, p, directed=False)
 
-    # if not connected, add edges to connect components
-    if not nx.is_connected(G):
-        comps = [list(c) for c in nx.connected_components(G)]
-        for a, b in zip(comps, comps[1:]):
-            u = a[0]
-            v = b[0]
-            G.add_edge(u, v)
-
-    # add random weights to edges
-    for u, v in G.edges():
-        G[u][v]["weight"] = random.uniform(w_low, w_high)
-
-    return G
-
-
-
-
-def high_girth_random_graph_bfs_simple(n: int,
+def high_girth_random_graph_bfs(n: int,
                                        t: float,
                                        w_low: float = 0.0,
                                        w_high: float = 1.0) -> nx.Graph:
