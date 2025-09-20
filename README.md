@@ -1,15 +1,12 @@
 # Greedy $t$-Spanner Experiments
 
-This repository provides a **clean Python implementation** of *greedy $t$-spanners* and a suite of experiments to explore **sparse subgraph design** and the theoretical bounds on size, weight, and stretch.
+This repository provides a **clean Python implementation** of **greedy $t$-spanners** and a suite of experiments to explore **sparse subgraph design** and the theoretical bounds on size, weight, and stretch.
 
 ## 🌐 Background
 
 A **$t$-spanner** of a weighted graph $G$ is a sparse subgraph $H$ such that  
 
-$
-\operatorname{dist}_H(u,v) \;\le\; t \cdot \operatorname{dist}_G(u,v)
-\qquad \forall (u,v) \in G
-$
+dist_H(u,v) ≤ t · dist_G(u,v)   for all (u,v) in G
 
 The greedy construction offers **provable guarantees** on size and weight while remaining conceptually simple and practical.
 
@@ -38,35 +35,17 @@ Each experiment prints a single CSV-style line with the following metrics:
 
 * **$w(\mathrm{MST}(G))$** – Weight of the minimum spanning tree of $G$, which acts as a natural lower bound for any connected subgraph.
 
-* **`max_stretch`** – Maximum observed stretch,
-  $
-  \max_{u,v} \frac{\operatorname{dist}_H(u,v)}{\operatorname{dist}_G(u,v)}
-  $
-  indicating how well the spanner preserves pairwise distances relative to the target $r$.
+* **`max_stretch`** – Maximum observed stretch max_{u,v} [ dist_H(u,v) / dist_G(u,v) ]
 
-* **`edge_bound_pass`** – Boolean (`True`/`False`) indicating whether the size bound
-  $
-  \lvert E(H) \rvert \;<\; n \cdot \left\lceil n^{1/t} \right\rceil
-  $
-  is satisfied.
+indicating how well the spanner preserves pairwise distances relative to the target $r$.
 
-* **`weight_bound_pass`** – Boolean indicating whether the weight bound
-  $
-  w(H) \;<\; w\!\left(\mathrm{MST}(G)\right) \cdot \left( 1 + \frac{n}{2t} \right)
-  $
-  is satisfied.
+* **`edge_bound_pass`** – Boolean (`True`/`False`) indicating whether the size bound |E(H)| < n · ⌈ n^(1/t) ⌉ is satisfied.
 
-* **`edge_bound_value`** – The computed upper limit
-  $
-  n \cdot \left\lceil n^{1/t} \right\rceil
-  $
-  used in the size-bound check.
+* **`weight_bound_pass`** – Boolean indicating whether the weight bound w(H) < w(MST(G)) · (1 + n / (2t)) is satisfied.
 
-* **`weight_bound_value`** – The computed upper limit
-  $
-  w(\mathrm{MST}(G)) \cdot \left( 1 + \frac{n}{2t} \right)
-  $
-  used in the weight-bound check.
+* **`edge_bound_value`** – The computed upper limit n · ⌈ n^(1/t) ⌉. used in the size-bound check.
+
+* **`weight_bound_value`** – The computed upper limit w(MST(G)) · (1 + n / (2t)). used in the weight-bound check.
 
 * **`build_seconds`** – Time (in seconds) required to generate the random input graph $G$.
 
